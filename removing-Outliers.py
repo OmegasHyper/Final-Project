@@ -10,13 +10,4 @@ threshold = 3
 
 df_clean = df[(z_scores.abs() <= threshold).all(axis=1)]
 
-print("Original size:", df.shape)
-print("After outlier removal:", df_clean.shape)
-print("Removed rows:", df.shape[0] - df_clean.shape[0])
-
-print(df['stroke'].value_counts())
-print(df_clean['stroke'].value_counts())
-
-print(df_clean)
-
 df_clean.to_csv("Dataset/cleaned_full_data.csv", index=False)
