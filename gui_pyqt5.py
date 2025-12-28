@@ -124,6 +124,7 @@ class NaiveBayesDashboard(QWidget):
             self.update_statistics()
             self.update_plots()
             self.update_model_results()
+            self.update_normality()
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -208,6 +209,42 @@ class NaiveBayesDashboard(QWidget):
             f"Sklearn GaussianNB Accuracy: "
             f"{accuracy_score(y_test, y_pred_sk):.4f}"
         )
+
+    # =====================================================
+    # Normality Tests
+    # =====================================================
+    def update_normality(self):
+        X_train = pd.read_csv("Dataset/X_train.csv")
+        y_train = pd.read_csv("Dataset/y_train.csv")
+
+        res = ""
+
+        from scipy.stats import shapiro
+        import numpy as np
+
+        df = X_train.copy()
+        df["stroke"] = y_train
+
+        quant_features = ['age', 'avg_glucose_level', 'bmi']
+        
+        for feature in quant_features:
+            clean = (
+                df[feature]
+                .dropna()
+                .replace([np.inf, -np.inf], np.nan)
+                .dropna()
+                .astype(float)
+            )
+
+            stat, p = shapiro(clean.sample(min(3000, len(clean)), random_state=42))
+            print(f"{feature} | p-value: {p:.10e}")
+            res += f"{feature} | p-value: {p:.10e}\n"
+        
+        self.normality_tab.setText(
+            "Shapiro Wilk test:\n\n"
+            f"{res}"
+        )
+         
 
 stylesheet = """
 QWidget {

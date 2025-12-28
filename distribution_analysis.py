@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy.stats import shapiro
+import numpy as np
 
 
 def run():
@@ -12,8 +13,16 @@ def run():
     quant_features = ['age', 'avg_glucose_level', 'bmi']
 
     for feature in quant_features:
-        stat, p = shapiro(df[feature])
-        print(f"{feature} | Shapiro p-value: {p:.5f}")
+        clean = (
+            df[feature]
+            .dropna()
+            .replace([np.inf, -np.inf], np.nan)
+            .dropna()
+            .astype(float)
+        )
+
+        stat, p = shapiro(clean.sample(min(3000, len(clean)), random_state=42))
+        print(f"{feature} | p-value: {p:.10e}")
 
 
 if __name__ == "__main__":
