@@ -34,6 +34,33 @@ class GaussianNaiveBayes:
             preds.append(self.classes[np.argmax(posteriors)])
         return np.array(preds)
 
+    def precision_recall_f1(self, y_true, y_pred):
+        classes = np.unique(y_true)
+
+        precisions = []
+        recalls = []
+        f1s = []
+
+        for c in classes:
+            tp = np.sum((y_pred == c) & (y_true == c))
+            fp = np.sum((y_pred == c) & (y_true != c))
+            fn = np.sum((y_pred != c) & (y_true == c))
+
+            precision = tp / (tp + fp + 1e-9)
+            recall = tp / (tp + fn + 1e-9)
+            f1 = 2 * precision * recall / (precision + recall + 1e-9)
+
+            precisions.append(precision)
+            recalls.append(recall)
+            f1s.append(f1)
+
+        # Macro-averaged metrics
+        return (
+            np.mean(precisions),
+            np.mean(recalls),
+            np.mean(f1s),
+        )
+
 
 def run():
     X_train = pd.read_csv("Dataset/X_train_std.csv").values
@@ -43,14 +70,23 @@ def run():
 
     nb = GaussianNaiveBayes()
     nb.fit(X_train, y_train)
-    acc = np.mean(nb.predict(X_test) == y_test)
+    y_pred = nb.predict(X_test)
+
+    acc = np.mean(y_pred == y_test)
 
     sk = GaussianNB()
     sk.fit(X_train, y_train)
     acc_sk = accuracy_score(y_test, sk.predict(X_test))
 
+    p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
+
     print(f"Accuracy (from scratch): {acc:.4f}")
     print(f"Accuracy (sklearn):      {acc_sk:.4f}")
+
+    print("From scratch metrics:")
+    print(f"Precision :   {p:.4f}")
+    print(f"Recall    :   {r:.4f}")
+    print(f"F1-score  :   {f1:.4f}")
 
 
 if __name__ == "__main__":

@@ -194,6 +194,7 @@ class NaiveBayesDashboard(QWidget):
         nb = GaussianNaiveBayes()
         nb.fit(X_train, y_train)
         y_pred = nb.predict(X_test)
+        p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
 
         sk = GaussianNB()
         sk.fit(X_train, y_train)
@@ -203,17 +204,21 @@ class NaiveBayesDashboard(QWidget):
             "Naive Bayes Performance\n\n"
             f"From Scratch:\n"
             f"Accuracy: {accuracy_score(y_test, y_pred):.4f}\n"
-            f"Precision: {precision_score(y_test, y_pred):.4f}\n"
-            f"Recall: {recall_score(y_test, y_pred):.4f}\n"
-            f"F1-score: {f1_score(y_test, y_pred):.4f}\n\n"
-            f"Sklearn GaussianNB Accuracy: "
-            f"{accuracy_score(y_test, y_pred_sk):.4f}"
+            f"Precision: {p:.4f}\n"
+            f"Recall: {r:.4f}\n"
+            f"F1-score: {f1:.4f}\n\n"
+            f"Sklearn GaussianNB: \n"
+            f"Accuracy: {accuracy_score(y_test, y_pred_sk):.4f}\n"
+            f"Precision: {precision_score(y_test, y_pred, average='macro'):.4f}\n"
+            f"Recall: {recall_score(y_test, y_pred, average='macro'):.4f}\n"
+            f"F1-score: {f1_score(y_test, y_pred, average='macro'):.4f}\n\n"
         )
 
     # =====================================================
     # Normality Tests
     # =====================================================
     def update_normality(self):
+        selected_feature = self.feature_box.currentText()
         X_train = pd.read_csv("Dataset/X_train.csv")
         y_train = pd.read_csv("Dataset/y_train.csv")
 
@@ -237,8 +242,9 @@ class NaiveBayesDashboard(QWidget):
             )
 
             stat, p = shapiro(clean.sample(min(3000, len(clean)), random_state=42))
-            print(f"{feature} | p-value: {p:.10e}")
-            res += f"{feature} | p-value: {p:.10e}\n"
+            if feature == selected_feature:
+                print(f"{feature} | p-value: {p:.10e}")
+                res = f"{feature} | p-value: {p:.10e}\n"
         
         self.normality_tab.setText(
             "Shapiro Wilk test:\n\n"
