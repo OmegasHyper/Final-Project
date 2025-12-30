@@ -348,7 +348,7 @@ class NaiveBayesDashboard(QWidget):
                 </tr>
             </table>
 
-            <p style="color: #ff9f43; margin: 50px 20px; font-size:20px;"><i><b>
+            <p style="color: #ff9f43; margin: 50px 20px; font-size:20px; background-color: #1a2025;"><i><b>
                 “The comparison demonstrates that the custom implementation
                 exactly matches the standard library implementation,
                 thereby verifying the algorithmic correctness of the fromscratch
