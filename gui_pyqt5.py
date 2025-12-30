@@ -183,7 +183,6 @@ class NaiveBayesDashboard(QWidget):
             self.update_plots()
             self.update_normality();
             self.update_model_results()
-            QMessageBox.information(self, "Status", "Optimization Pipeline Completed.")
         except Exception as e:
             QMessageBox.critical(self, "Critical Error", f"System Failure: {str(e)}")
 
