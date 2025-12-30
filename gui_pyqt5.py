@@ -218,8 +218,56 @@ class NaiveBayesDashboard(QWidget):
 
     def update_model_results(self):
         # Implementation of metrics logic...
+        X_train = pd.read_csv("Dataset/X_train_std.csv").values
+        X_test = pd.read_csv("Dataset/X_test_std.csv").values
+        y_train = pd.read_csv("Dataset/y_train.csv").values.ravel()
+        y_test = pd.read_csv("Dataset/y_test.csv").values.ravel()
+
+        from naive_bayes import GaussianNaiveBayes
+        from sklearn.naive_bayes import GaussianNB
+        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+        nb = GaussianNaiveBayes()
+        nb.fit(X_train, y_train)
+        y_pred = nb.predict(X_test)
+        p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
+
+        sk = GaussianNB()
+        sk.fit(X_train, y_train)
+        y_pred_sk = sk.predict(X_test)
+
         self.model_tab.setHtml(
-            "<h1 style='color: #48dbfb; padding: 30px;'>Model Performance metrics updated successfully.</h1>")
+            f"""
+            <h1 style='color: #48dbfb; padding: 30px;'>Naive Bayes Performance.</h1>
+
+            <table width="100%" style="font-size: 18px; margin-top: 20px;" cellpadding="10">
+                <tr style="background-color: #2f3640;">
+                    <td><b>POC.</b></td>
+                    <td><b>GaussianNB From Scratch</b></td>
+                    <td><b>Sklearn GaussianNB</b></td>
+                </tr>
+                <tr>
+                    <td>Accuracy</td>
+                    <td>{accuracy_score(y_test, y_pred):.4f}</td>
+                    <td>{accuracy_score(y_test, y_pred_sk):.4f}</td>
+                </tr>
+                <tr>
+                    <td>Precision</td>
+                    <td>{precision_score(y_test, y_pred, average='macro'):.4f}</td>
+                    <td>{precision_score(y_test, y_pred, average='macro'):.4f}</td>
+                </tr>
+                <tr>
+                    <td>Recall</td>
+                    <td>{r:.4f}</td>
+                    <td>{recall_score(y_test, y_pred, average='macro'):.4f}</td>
+                </tr>
+                <tr>
+                    <td>F1-score</td>
+                    <td>{f1:.4f}</td>
+                    <td>{f1_score(y_test, y_pred, average='macro'):.4f}</td>
+                </tr>
+            </table>
+            """)
 
 
 # ================= PROFESSIONAL STYLESHEET =================
