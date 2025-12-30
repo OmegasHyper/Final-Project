@@ -153,8 +153,10 @@ class NaiveBayesDashboard(QWidget):
     def update_plots(self):
         feature = self.feature_box.currentText()
 
-        df = pd.read_csv("Dataset/cleaned_full_data.csv")
+        # df = pd.read_csv("Dataset/cleaned_full_data.csv")
         X_train_std = pd.read_csv("Dataset/X_train_std.csv")
+        y_train = pd.read_csv("Dataset/y_train.csv")
+        train_data = X_train_std.join(y_train)
 
         self.fig.clear()
 
@@ -163,16 +165,16 @@ class NaiveBayesDashboard(QWidget):
         ax3 = self.fig.add_subplot(223)
         ax4 = self.fig.add_subplot(224)
 
-        ax1.hist(df[feature], bins=30)
+        ax1.hist(train_data[feature], bins=70)
         ax1.set_title("Overall Distribution")
 
-        ax2.hist(df[df.stroke == 0][feature], bins=30, density=True)
+        ax2.hist(train_data[train_data.stroke == 0][feature], bins=70, density=True)
         ax2.set_title("P(x | No Stroke)")
 
-        ax3.hist(df[df.stroke == 1][feature], bins=30, density=True)
+        ax3.hist(train_data[train_data.stroke == 1][feature], bins=70, density=True)
         ax3.set_title("P(x | Stroke)")
 
-        ax4.hist(X_train_std[feature], bins=30)
+        ax4.hist(train_data[feature], bins=70)
         ax4.set_title("After Standardization")
 
         self.fig.subplots_adjust(wspace=0.3, hspace=0.4)
