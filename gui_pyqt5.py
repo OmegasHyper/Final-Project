@@ -230,19 +230,73 @@ class NaiveBayesDashboard(QWidget):
     def update_normality(self):
         feat = self.feature_box.currentText()
         data = pd.read_csv("Dataset/X_train.csv")[feat].dropna()
+
+        # Calculations
         stat, p = stats.shapiro(data.sample(min(3000, len(data))))
+        skewness = data.skew()
+        kurtosis = data.kurtosis()
+
+        is_normal = p > 0.05
+        status_text = "ACCEPT H₀: NORMAL" if is_normal else "REJECT H₀: NON-NORMAL"
+        status_color = "#27ae60" if is_normal else "#e74c3c"
+
         html = f"""
-        <div style="font-family: 'Segoe UI'; padding: 30px; color: #ecf0f1;">
-            <h1 style="color: #ff9f43;">Inferential Statistics: {feat.title()}</h1>
-            <p style="font-size: 16px; color: #bdc3c7;"><b>Hypothesis Test:</b> Shapiro-Wilk Normality Test</p>
-            <div style="background-color: #2f3640; padding: 20px; border-radius: 10px;">
-                <p><b>P-Value:</b> <span style="color: #ff6b6b; font-size: 22px;">{p:.4e}</span></p>
-                <p><b>Status:</b> {'Reject Null (Non-Normal)' if p < 0.05 else 'Accept Null (Normal)'}</p>
+        <div style="font-family: 'Segoe UI'; padding: 25px; color: #ecf0f1;">
+            <h1 style="color: #ff9f43; border-bottom: 2px solid #2f3640; padding-bottom: 10px;">
+                Hypothesis Testing & Pipeline Logic: {feat.title()}
+            </h1>
+
+            <div style="margin-top: 15px; padding: 15px; background-color: #2f3640; border-radius: 8px;">
+                <p style="margin: 0; font-size: 13px; color: #95a5a6;">CURRENT PIPELINE STATUS</p>
+                <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: {status_color};">
+                    {status_text}
+                </p>
+            </div>
+
+            <div style="margin-top: 25px; background-color: #161b22; border-radius: 10px; padding: 20px; border: 1px solid #2f3640;">
+                <h3 style="color: #ff9f43; margin-top: 0;">1. Hypothesis Definitions</h3>
+                <p><b>Null Hypothesis (H₀):</b> The feature <i>{feat}</i> follows a Gaussian (Normal) distribution. 
+                In this state, we assume the data is symmetric and bell-shaped.</p>
+                <p><b>Alternative Hypothesis (H₁):</b> The feature <i>{feat}</i> does NOT follow a Gaussian distribution. 
+                This suggests the presence of significant skewness, heavy tails, or multi-modality.</p>
+            </div>
+
+            <div style="margin-top: 20px; background-color: #161b22; border-radius: 10px; padding: 20px; border: 1px solid #2f3640;">
+                <h3 style="color: #ff9f43; margin-top: 0;">2. The Lifecycle in Pipeline Execution</h3>
+
+                <table width="100%" style="font-size: 14px; border-collapse: collapse; margin-top: 10px;" cellpadding="8">
+                    <tr style="border-bottom: 1px solid #2f3640; color: #95a5a6;">
+                        <th align="left">Pipeline Phase</th>
+                        <th align="left">Action regarding H₀ / H₁</th>
+                    </tr>
+                    <tr>
+                        <td><b>Preprocessing</b></td>
+                        <td>Outlier removal is performed to help the data move closer to <b>H₀</b>.</td>
+                    </tr>
+                    <tr style="background-color: #1a2025;">
+                        <td><b>Distribution Analysis</b></td>
+                        <td>This module calculates the P-value. If P < 0.05, <b>H₀ is rejected</b>.</td>
+                    </tr>
+                    <tr>
+                        <td><b>Standardization</b></td>
+                        <td>Data is scaled. If <b>H₀ was rejected</b>, Z-score scaling is still applied, but the underlying non-normal shape remains.</td>
+                    </tr>
+                    <tr style="background-color: #1a2025;">
+                        <td><b>Naive Bayes Fit</b></td>
+                        <td>The model calculates Mean and Variance. It <i>forces</i> a Gaussian shape onto the data even if <b>H₁ is true</b>, which can lead to prediction errors.</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="margin-top: 25px; border-left: 4px solid {status_color}; padding-left: 15px;">
+                <h3 style="color: {status_color};">Final Conclusion</h3>
+                <p style="line-height: 1.6;">
+                    Result: {f"The data remains consistent with <b>H₀</b>. Gaussian Naive Bayes is theoretically sound for this feature." if is_normal else f"The data best with <b>H₁</b>. Because the distribution is non-normal, the Naive Bayes model may yield biased probabilities for this specific feature."}
+                </p>
             </div>
         </div>
         """
         self.normality_tab.setHtml(html)
-
     def update_model_results(self):
         X_train = pd.read_csv("Dataset/X_train_std.csv").values
         X_test = pd.read_csv("Dataset/X_test_std.csv").values
