@@ -274,25 +274,39 @@ class NaiveBayesDashboard(QWidget):
                 </tr>
                 <tr>
                     <td>Accuracy</td>
-                    <td>{accuracy_score(y_test, y_pred):.4f}</td>
-                    <td>{accuracy_score(y_test, y_pred_sk):.4f}</td>
+                    <td>{accuracy_score(y_test, y_pred):.12f}</td>
+                    <td>{accuracy_score(y_test, y_pred_sk):.12f}</td>
                 </tr>
                 <tr>
                     <td>Precision</td>
-                    <td>{precision_score(y_test, y_pred, average='macro'):.4f}</td>
-                    <td>{precision_score(y_test, y_pred, average='macro'):.4f}</td>
+                    <td>{precision_score(y_test, y_pred, average='macro'):.12f}</td>
+                    <td>{precision_score(y_test, y_pred, average='macro'):.12f}</td>
                 </tr>
                 <tr>
                     <td>Recall</td>
-                    <td>{r:.4f}</td>
-                    <td>{recall_score(y_test, y_pred, average='macro'):.4f}</td>
+                    <td>{r:.12f}</td>
+                    <td>{recall_score(y_test, y_pred, average='macro'):.12f}</td>
                 </tr>
                 <tr>
                     <td>F1-score</td>
-                    <td>{f1:.4f}</td>
-                    <td>{f1_score(y_test, y_pred, average='macro'):.4f}</td>
+                    <td>{f1:.12f}</td>
+                    <td>{f1_score(y_test, y_pred, average='macro'):.12f}</td>
                 </tr>
             </table>
+
+            <p style="color: #ff9f43; margin: 50px 20px; font-size:20px;"><i><b>
+                “The comparison demonstrates that the custom implementation
+                exactly matches the standard library implementation,
+                thereby verifying the algorithmic correctness of the fromscratch
+                implementation. In addition to accuracy, the classifier
+                performance was evaluated using precision, recall, and F1-
+                score to provide a more comprehensive assessment. These
+                metrics are particularly important in medical classification
+                tasks, where class imbalance may bias accuracy alone. Precision
+                reflects the reliability of positive stroke predictions, while
+                recall measures the model’s ability to correctly identify stroke
+                cases.”
+            </b></i></p>
             """)
 
 
