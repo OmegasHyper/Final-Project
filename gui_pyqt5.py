@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 # ===== Pipeline Modules =====
+import feature_types
 import removing_outliers
 import quantitative_statistics
 import split_data
@@ -51,7 +52,7 @@ class NaiveBayesDashboard(QWidget):
             padding: 10px;
         """)
         main_layout.addWidget(header)
-
+        self.quant_features, self.cat_features = feature_types.get_feature_types()
         # ================= TOP CONTENT =================
         top_layout = QHBoxLayout()
 
@@ -59,6 +60,18 @@ class NaiveBayesDashboard(QWidget):
         left_panel = QGroupBox("Controls")
         left_layout = QVBoxLayout()
 
+        left_layout.addWidget(QLabel("<b>Quantitative Features:</b>"))
+        quant_list_text = "\n".join([f"• {f}" for f in self.quant_features])
+        quant_label = QLabel(quant_list_text)
+        quant_label.setStyleSheet("color: #0984e3; margin-bottom: 10px; padding-left: 5px;")
+        left_layout.addWidget(quant_label)
+
+
+        left_layout.addWidget(QLabel("<b>Categorical Features:</b>"))
+        cat_list_text = "\n".join([f"• {f}" for f in self.cat_features])
+        cat_label = QLabel(cat_list_text)
+        cat_label.setStyleSheet("color: #e17055; margin-bottom: 20px; padding-left: 5px;")
+        left_layout.addWidget(cat_label)
         self.feature_box = QComboBox()
         self.feature_box.addItems(['age', 'avg_glucose_level', 'bmi'])
 
