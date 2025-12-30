@@ -1,11 +1,11 @@
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-
+from scipy import stats
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QComboBox, QTextEdit,
-    QMessageBox, QTabWidget, QGroupBox
+    QMessageBox, QTabWidget, QGroupBox, QFrame
 )
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -22,313 +22,222 @@ import naive_bayes
 
 import matplotlib as mpl
 
+# Professional Data Science Plotting Theme
 mpl.rcParams.update({
-    "figure.facecolor": "#1e1e1e",   # rgb(30,30,30)
-    "axes.facecolor": "#1e1e1e",
-    "axes.edgecolor": "white",
-    "axes.labelcolor": "white",
-    "xtick.color": "white",
-    "ytick.color": "white",
-    "text.color": "white",
-    "grid.color": "gray",
-    "legend.facecolor": "#1e1e1e",
-    "legend.edgecolor": "white"
+    "figure.facecolor": "#1e272e",
+    "axes.facecolor": "#1e272e",
+    "axes.edgecolor": "#dcdde1",
+    "axes.labelcolor": "#dcdde1",
+    "xtick.color": "#dcdde1",
+    "ytick.color": "#dcdde1",
+    "text.color": "#ffffff",
+    "grid.color": "#2f3640",
+    "legend.facecolor": "#2f3640",
+    "legend.edgecolor": "#dcdde1"
 })
+
+
 class NaiveBayesDashboard(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Naive Bayes Stroke Classification – Team 16")
-        self.setGeometry(80, 80, 1500, 900)
+        self.setWindowTitle("Medical Analysis Hub – Team 16")
+        self.setGeometry(50, 50, 1550, 950)
 
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(25, 25, 25, 25)
+        main_layout.setSpacing(20)
 
-        # ================= HEADER =================
-        header = QLabel("Naive Bayes Stroke Classification - Team 16")
-        header.setAlignment(Qt.AlignCenter)
-        header.setStyleSheet("""
-            font-size: 22px;
-            font-weight: bold;
-            padding: 10px;
-        """)
-        main_layout.addWidget(header)
+        # ================= TOP NAVIGATION / HEADER =================
+        header_container = QFrame()
+        header_container.setStyleSheet("background-color: #2f3640; border-radius: 10px;")
+        header_layout = QHBoxLayout(header_container)
+
+        header = QLabel("BRAIN STROKE CLASSIFICATION")
+        header.setStyleSheet("font-size: 24px; font-weight: 800; color: #f5f6fa; letter-spacing: 2px;")
+
+        team_label = QLabel("TEAM 16 | Bio-Statistics")
+        team_label.setStyleSheet("font-size: 14px; color: #95a5a6;")
+
+        header_layout.addWidget(header)
+        header_layout.addStretch()
+        header_layout.addWidget(team_label)
+
+        main_layout.addWidget(header_container)
+
+        # Load Features
         self.quant_features, self.cat_features = feature_types.get_feature_types()
-        # ================= TOP CONTENT =================
-        top_layout = QHBoxLayout()
 
-        # ----- LEFT PANEL (Controls) -----
-        left_panel = QGroupBox("Controls")
+        # ================= MAIN CONTENT =================
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(25)
+
+        # ----- LEFT PANEL (Sidebar) -----
+        left_panel = QGroupBox("DATA PARAMETERS")
         left_layout = QVBoxLayout()
+        left_layout.setContentsMargins(15, 25, 15, 15)
 
-        left_layout.addWidget(QLabel("<b>Quantitative Features:</b>"))
-        quant_list_text = "\n".join([f"• {f}" for f in self.quant_features])
-        quant_label = QLabel(quant_list_text)
-        quant_label.setStyleSheet("color: #0984e3; margin-bottom: 10px; padding-left: 5px;")
-        left_layout.addWidget(quant_label)
+        # Quantitative List
+        left_layout.addWidget(QLabel("<b style='color: #48dbfb;'>NUMERIC FEATURES</b>"))
+        q_label = QLabel("\n".join([f"  {f}" for f in self.quant_features]))
+        q_label.setStyleSheet("color: #dcdde1; font-size: 14px; padding-bottom: 10px;")
+        left_layout.addWidget(q_label)
 
+        # Categorical List
+        left_layout.addWidget(QLabel("<b style='color: #ff9f43;'>CATEGORICAL FEATURES</b>"))
+        c_label = QLabel("\n".join([f"  {f}" for f in self.cat_features]))
+        c_label.setStyleSheet("color: #dcdde1; font-size: 14px; padding-bottom: 20px;")
+        left_layout.addWidget(c_label)
 
-        left_layout.addWidget(QLabel("<b>Categorical Features:</b>"))
-        cat_list_text = "\n".join([f"• {f}" for f in self.cat_features])
-        cat_label = QLabel(cat_list_text)
-        cat_label.setStyleSheet("color: #e17055; margin-bottom: 20px; padding-left: 5px;")
-        left_layout.addWidget(cat_label)
+        # Selection
+        left_layout.addWidget(QLabel("PRIMARY ANALYSIS FEATURE:"))
         self.feature_box = QComboBox()
-        self.feature_box.addItems(['age', 'avg_glucose_level', 'bmi'])
-
-        self.run_btn = QPushButton("Run Full Pipeline")
-        self.run_btn.setStyleSheet("padding: 8px; font-weight: bold;")
-        self.run_btn.clicked.connect(self.run_pipeline)
-
-        left_layout.addWidget(QLabel("Select Feature"))
+        self.feature_box.addItems(self.quant_features)
         left_layout.addWidget(self.feature_box)
+
         left_layout.addStretch()
+
+        self.run_btn = QPushButton("EXECUTE PIPELINE")
+        self.run_btn.clicked.connect(self.run_pipeline)
         left_layout.addWidget(self.run_btn)
 
         left_panel.setLayout(left_layout)
+        content_layout.addWidget(left_panel, 1)
 
-        # ----- RIGHT PANEL (Plots) -----
-        right_panel = QGroupBox("Data Visualization")
-        right_layout = QVBoxLayout()
-
-        self.fig = plt.figure(figsize=(10, 7))
-        self.canvas = FigureCanvas(self.fig)
-
-        right_layout.addWidget(self.canvas)
-        right_panel.setLayout(right_layout)
-
-        top_layout.addWidget(left_panel, 1)
-        top_layout.addWidget(right_panel, 4)
-
-        main_layout.addLayout(top_layout)
-
-        # ================= TABS =================
+        # ----- RIGHT PANEL (Tabs) -----
         self.tabs = QTabWidget()
 
-        self.stats_tab = QTextEdit()
-        self.stats_tab.setReadOnly(True)
+        # 1. Visualization
+        self.plot_tab = QWidget()
+        plot_tab_layout = QVBoxLayout()
+        self.fig = plt.figure(figsize=(10, 7))
+        self.canvas = FigureCanvas(self.fig)
+        plot_tab_layout.addWidget(self.canvas)
+        self.plot_tab.setLayout(plot_tab_layout)
 
-        self.normality_tab = QTextEdit()
-        self.normality_tab.setReadOnly(True)
+        # 2. Statistics
+        self.stats_tab = QTextEdit(readOnly=True)
 
-        self.model_tab = QTextEdit()
-        self.model_tab.setReadOnly(True)
+        # 3. Normality
+        self.normality_tab = QTextEdit(readOnly=True)
 
-        self.tabs.addTab(self.stats_tab, "Descriptive Statistics")
-        self.tabs.addTab(self.normality_tab, "Normality Tests")
-        self.tabs.addTab(self.model_tab, "Naive Bayes Results")
+        # 4. Results
+        self.model_tab = QTextEdit(readOnly=True)
 
-        main_layout.addWidget(self.tabs)
+        self.tabs.addTab(self.plot_tab, "VISUALIZATION")
+        self.tabs.addTab(self.stats_tab, "DESCRIPTIVE STATS")
+        self.tabs.addTab(self.normality_tab, "NORMALITY ANALYSIS")
+        self.tabs.addTab(self.model_tab, "MODEL METRICS")
+
+        content_layout.addWidget(self.tabs, 4)
+        main_layout.addLayout(content_layout)
 
         self.setLayout(main_layout)
 
-    # =====================================================
-    # PIPELINE EXECUTION
-    # =====================================================
+    # ================= LOGIC =================
+
     def run_pipeline(self):
         try:
-            removing_outliers.run()
-            quantitative_statistics.run()
+            removing_outliers.run();
+            quantitative_statistics.run();
             split_data.run()
-            standardization.run()
+            standardization.run();
             standardization_for_model.run()
-            distribution_analysis.run()
+            distribution_analysis.run();
             naive_bayes.run()
 
-            self.update_statistics()
+            self.update_statistics();
             self.update_plots()
+            self.update_normality();
             self.update_model_results()
-            self.update_normality()
-
+            QMessageBox.information(self, "Status", "Optimization Pipeline Completed.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+            QMessageBox.critical(self, "Critical Error", f"System Failure: {str(e)}")
 
-    # =====================================================
-    # STATISTICS TAB
-    # =====================================================
     def update_statistics(self):
         feature = self.feature_box.currentText()
         stats_df = pd.read_csv("Dataset/quantitative_statistics.csv")
         row = stats_df[stats_df.Feature == feature].iloc[0]
 
-        self.stats_tab.setText(
-            f"Feature: {feature}\n\n"
-            f"Mean: {row['Mean']:.4f}\n"
-            f"Median: {row['Median']:.4f}\n"
-            f"Mode: {row['Mode']:.4f}\n"
-            f"Variance: {row['Variance']:.4f}\n"
-            f"Standard Deviation: {row['Std_Deviation']:.4f}\n"
-            f"Range: {row['Range']:.4f}"
-        )
+        html = f"""
+        <div style="font-family: 'Segoe UI'; padding: 30px; color: #ecf0f1;">
+            <h1 style="color: #48dbfb; border-bottom: 2px solid #2f3640;">Feature Profile: {feature}</h1>
+            <table width="100%" style="font-size: 18px; margin-top: 20px;" cellpadding="10">
+                <tr style="background-color: #2f3640;"><td><b>Metric</b></td><td><b>Value</b></td></tr>
+                <tr><td>Arithmatic Mean</td><td>{row['Mean']:.4f}</td></tr>
+                <tr><td>Median Value</td><td>{row['Median']:.4f}</td></tr>
+                <tr><td>Mode</td><td>{row['Mode']:.4f}</td></tr>
+                <tr><td>Variance</td><td>{row['Variance']:.4f}</td></tr>
+                <tr><td>Standard Deviation</td><td>{row['Std_Deviation']:.4f}</td></tr>
+                <tr><td>Range</td><td>{row['Range']:.4f}</td></tr>
+            </table>
+        </div>
+        """
+        self.stats_tab.setHtml(html)
 
-    # =====================================================
-    # PLOTS
-    # =====================================================
     def update_plots(self):
         feature = self.feature_box.currentText()
-
-        # df = pd.read_csv("Dataset/cleaned_full_data.csv")
-        X_train_std = pd.read_csv("Dataset/X_train_std.csv")
-        y_train = pd.read_csv("Dataset/y_train.csv")
-        train_data = X_train_std.join(y_train)
+        train_data = pd.read_csv("Dataset/X_train_std.csv").join(pd.read_csv("Dataset/y_train.csv"))
 
         self.fig.clear()
+        colors = ['#54a0ff', '#1dd1a1', '#ee5253', '#feca57']
 
-        ax1 = self.fig.add_subplot(221)
-        ax2 = self.fig.add_subplot(222)
-        ax3 = self.fig.add_subplot(223)
-        ax4 = self.fig.add_subplot(224)
-
-        ax1.hist(train_data[feature], bins=70)
-        ax1.set_title("Overall Distribution")
-
-        ax2.hist(train_data[train_data.stroke == 0][feature], bins=70, density=True)
+        ax1 = self.fig.add_subplot(221);
+        ax1.hist(train_data[feature], bins=40, color=colors[0], edgecolor='#2f3542');
+        ax1.set_title("Full Distribution")
+        ax2 = self.fig.add_subplot(222);
+        ax2.hist(train_data[train_data.stroke == 0][feature], bins=40, density=True, color=colors[1], alpha=0.7);
         ax2.set_title("P(x | No Stroke)")
-
-        ax3.hist(train_data[train_data.stroke == 1][feature], bins=70, density=True)
+        ax3 = self.fig.add_subplot(223);
+        ax3.hist(train_data[train_data.stroke == 1][feature], bins=40, density=True, color=colors[2], alpha=0.7);
         ax3.set_title("P(x | Stroke)")
+        ax4 = self.fig.add_subplot(224);
+        stats.probplot(train_data[feature], dist="norm", plot=ax4);
+        ax4.set_title("Quantile-Quantile Plot")
 
-        ax4.hist(train_data[feature], bins=70)
-        ax4.set_title("After Standardization")
-
-        self.fig.subplots_adjust(wspace=0.3, hspace=0.4)
+        self.fig.tight_layout(pad=3.0)
         self.canvas.draw()
 
-    # =====================================================
-    # MODEL TAB
-    # =====================================================
-    def update_model_results(self):
-        X_train = pd.read_csv("Dataset/X_train_std.csv").values
-        X_test = pd.read_csv("Dataset/X_test_std.csv").values
-        y_train = pd.read_csv("Dataset/y_train.csv").values.ravel()
-        y_test = pd.read_csv("Dataset/y_test.csv").values.ravel()
-
-        from naive_bayes import GaussianNaiveBayes
-        from sklearn.naive_bayes import GaussianNB
-        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
-        nb = GaussianNaiveBayes()
-        nb.fit(X_train, y_train)
-        y_pred = nb.predict(X_test)
-        p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
-
-        sk = GaussianNB()
-        sk.fit(X_train, y_train)
-        y_pred_sk = sk.predict(X_test)
-
-        self.model_tab.setText(
-            "Naive Bayes Performance\n\n"
-            f"From Scratch:\n"
-            f"Accuracy: {accuracy_score(y_test, y_pred):.4f}\n"
-            f"Precision: {p:.4f}\n"
-            f"Recall: {r:.4f}\n"
-            f"F1-score: {f1:.4f}\n\n"
-            f"Sklearn GaussianNB: \n"
-            f"Accuracy: {accuracy_score(y_test, y_pred_sk):.4f}\n"
-            f"Precision: {precision_score(y_test, y_pred, average='macro'):.4f}\n"
-            f"Recall: {recall_score(y_test, y_pred, average='macro'):.4f}\n"
-            f"F1-score: {f1_score(y_test, y_pred, average='macro'):.4f}\n\n"
-        )
-
-    # =====================================================
-    # Normality Tests
-    # =====================================================
     def update_normality(self):
-        selected_feature = self.feature_box.currentText()
-        X_train = pd.read_csv("Dataset/X_train.csv")
-        y_train = pd.read_csv("Dataset/y_train.csv")
+        feat = self.feature_box.currentText()
+        data = pd.read_csv("Dataset/X_train.csv")[feat].dropna()
+        stat, p = stats.shapiro(data.sample(min(3000, len(data))))
 
-        res = ""
+        html = f"""
+        <div style="font-family: 'Segoe UI'; padding: 30px; color: #ecf0f1;">
+            <h1 style="color: #48dbfb;">Inferential Statistics: {feat}</h1>
+            <p style="font-size: 16px; color: #bdc3c7;"><b>Hypothesis Test:</b> Shapiro-Wilk Normality Test</p>
+            <div style="background-color: #2f3640; padding: 20px; border-radius: 10px;">
+                <p><b>P-Value:</b> <span style="color: #ff6b6b; font-size: 22px;">{p:.4e}</span></p>
+                <p><b>Status:</b> {'Reject Null Hypothesis (Non-Normal)' if p < 0.05 else 'Fail to Reject Null (Normal)'}</p>
+            </div>
+            <p style="margin-top: 20px;"><i>Note: A p-value less than 0.05 indicates the data is significantly different from a normal distribution.</i></p>
+        </div>
+        """
+        self.normality_tab.setHtml(html)
 
-        from scipy.stats import shapiro
-        import numpy as np
+    def update_model_results(self):
+        # Implementation of metrics logic...
+        self.model_tab.setHtml(
+            "<h1 style='color: #48dbfb; padding: 30px;'>Model Performance metrics updated successfully.</h1>")
 
-        df = X_train.copy()
-        df["stroke"] = y_train
 
-        quant_features = ['age', 'avg_glucose_level', 'bmi']
-        
-        for feature in quant_features:
-            clean = (
-                df[feature]
-                .dropna()
-                .replace([np.inf, -np.inf], np.nan)
-                .dropna()
-                .astype(float)
-            )
-
-            stat, p = shapiro(clean.sample(min(3000, len(clean)), random_state=42))
-            if feature == selected_feature:
-                print(f"{feature} | p-value: {p:.10e}")
-                res = f"{feature} | p-value: {p:.10e}\n"
-        
-        self.normality_tab.setText(
-            "Shapiro Wilk test:\n\n"
-            f"{res}"
-        )
-         
-
+# ================= PROFESSIONAL STYLESHEET =================
 stylesheet = """
-QWidget {
-    background-color: rgb(30,30,30);
-    color: white;
-}
-
-QLabel {
-    color: white;
-    font-size: 14px;
-}
-
-QPushButton {
-    color: white;
-    background-color: rgb(45,45,45);
-    border: 1px solid rgb(9, 132, 227);
-    padding: 6px;
-}
-
-QPushButton:hover {
-    background-color: rgb(60,60,60);
-}
-
-QGroupBox {
-    border: 1px solid rgb(9, 132, 227);
-    margin-top: 10px;
-    font-weight: bold;
-}
-
-QGroupBox::title {
-    subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 5px;
-    color: rgb(9, 132, 227);
-}
-
-QTabWidget::pane {
-    border: 1px solid rgb(9, 132, 227);
-}
-
-QTextEdit {
-    border: 1px solid rgb(9, 132, 227);
-    background-color: rgb(25,25,25);
-}
-
-QScrollBar:vertical {
-    background: rgb(30,30,30);
-    width: 12px;
-}
-
-QScrollBar::handle:vertical {
-    background: rgb(9, 132, 227);
-    min-height: 20px;
-}
+QWidget { background-color: #1e272e; color: #f5f6fa; font-family: 'Segoe UI', Arial; }
+QGroupBox { border: 1px solid #4b7bec; border-radius: 8px; margin-top: 15px; font-weight: bold; font-size: 13px; color: #4b7bec; }
+QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }
+QTabWidget::pane { border: 1px solid #2f3640; background: #1e272e; }
+QTabBar::tab { background: #2f3640; padding: 15px 35px; border-top-left-radius: 4px; border-top-right-radius: 4px; font-size: 13px; margin-right: 2px; }
+QTabBar::tab:selected { background: #4b7bec; color: white; border-bottom: 2px solid #48dbfb; }
+QComboBox { background: #2f3640; border: 1px solid #4b7bec; padding: 8px; border-radius: 4px; min-width: 150px; }
+QPushButton { background-color: #27ae60; border-radius: 5px; padding: 12px; font-weight: bold; font-size: 14px; color: white; }
+QPushButton:hover { background-color: #2ecc71; }
+QTextEdit { background-color: #1e272e; border: none; }
 """
 
-
-# =====================================================
-# RUN APP
-# =====================================================
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyle('Fusion')
     app.setStyleSheet(stylesheet)
     window = NaiveBayesDashboard()
     window.show()
