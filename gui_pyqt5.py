@@ -242,29 +242,29 @@ class NaiveBayesDashboard(QWidget):
 
         html = f"""
         <div style="font-family: 'Segoe UI'; padding: 25px; color: #ecf0f1;">
-            <h1 style="color: #ff9f43; border-bottom: 2px solid #2f3640; padding-bottom: 10px;">
+            <h1 style="color: #ff9f43; border-bottom: 2px solid #2f3640; padding-bottom: 20px;">
                 Hypothesis Testing & Pipeline Logic: {feat.title()}
             </h1>
 
             <div style="margin-top: 15px; padding: 15px; background-color: #2f3640; border-radius: 8px;">
-                <p style="margin: 0; font-size: 13px; color: #95a5a6;">CURRENT PIPELINE STATUS</p>
+                <p style="margin: 0; font-size: 15px; color: #95a5a6;">CURRENT PIPELINE STATUS</p>
                 <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: {status_color};">
                     {status_text}
                 </p>
             </div>
 
             <div style="margin-top: 25px; background-color: #161b22; border-radius: 10px; padding: 20px; border: 1px solid #2f3640;">
-                <h3 style="color: #ff9f43; margin-top: 0;">1. Hypothesis Definitions</h3>
-                <p><b>Null Hypothesis (H₀):</b> The feature <i>{feat}</i> follows a Gaussian (Normal) distribution. 
+                <h2 style="color: #ff9f43; margin-top: 0;">1. Hypothesis Definitions</h2>
+                <p style="font-size: 20px"><b>Null Hypothesis (H₀):</b> The feature <i>{feat}</i> follows a Gaussian (Normal) distribution. 
                 In this state, we assume the data is symmetric and bell-shaped.</p>
-                <p><b>Alternative Hypothesis (H₁):</b> The feature <i>{feat}</i> does NOT follow a Gaussian distribution. 
+                <p style="font-size: 20px"><b>Alternative Hypothesis (H₁):</b> The feature <i>{feat}</i> does NOT follow a Gaussian distribution. 
                 This suggests the presence of significant skewness, heavy tails, or multi-modality.</p>
             </div>
 
-            <div style="margin-top: 20px; background-color: #161b22; border-radius: 10px; padding: 20px; border: 1px solid #2f3640;">
-                <h3 style="color: #ff9f43; margin-top: 0;">2. The Lifecycle in Pipeline Execution</h3>
+            <div style="margin-top: 15px; background-color: #161b22; border-radius: 10px; padding: 20px; border: 1px solid #2f3640;">
+                <h2 style="color: #ff9f43; margin-top: 0;">2. The Lifecycle in Pipeline Execution</h2>
 
-                <table width="100%" style="font-size: 14px; border-collapse: collapse; margin-top: 10px;" cellpadding="8">
+                <table width="100%" style="font-size: 15px; border-collapse: collapse; margin-top: 10px;" cellpadding="8">
                     <tr style="border-bottom: 1px solid #2f3640; color: #95a5a6;">
                         <th align="left">Pipeline Phase</th>
                         <th align="left">Action regarding H₀ / H₁</th>
