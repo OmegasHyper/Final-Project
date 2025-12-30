@@ -213,13 +213,13 @@ class NaiveBayesDashboard(QWidget):
         self.fig.clear()
         colors = ['#54a0ff', '#1dd1a1', '#ee5253', '#feca57']
         ax1 = self.fig.add_subplot(221);
-        ax1.hist(train_data[feature], bins=40, color=colors[0], edgecolor='#2f3542');
+        ax1.hist(train_data[feature], bins=80, color=colors[0], edgecolor='#2f3542');
         ax1.set_title(f"Full Distribution: {feature.title()}")
         ax2 = self.fig.add_subplot(222);
-        ax2.hist(train_data[train_data.stroke == 0][feature], bins=40, density=True, color=colors[1], alpha=0.7);
+        ax2.hist(train_data[train_data.stroke == 0][feature], bins=80, density=True, color=colors[1], alpha=0.7);
         ax2.set_title("P(x | No Stroke)")
         ax3 = self.fig.add_subplot(223);
-        ax3.hist(train_data[train_data.stroke == 1][feature], bins=40, density=True, color=colors[2], alpha=0.7);
+        ax3.hist(train_data[train_data.stroke == 1][feature], bins=80, density=True, color=colors[2], alpha=0.7);
         ax3.set_title("P(x | Stroke)")
         ax4 = self.fig.add_subplot(224);
         stats.probplot(train_data[feature], dist="norm", plot=ax4);
