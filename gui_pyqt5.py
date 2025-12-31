@@ -247,26 +247,31 @@ class NaiveBayesDashboard(QWidget):
         train_data = pd.read_csv("Dataset/X_train_std.csv").join(pd.read_csv("Dataset/y_train.csv"))
         self.fig.clear()
         colors = ['#54a0ff', '#1dd1a1', '#ee5253', '#feca57']
+
         ax1 = self.fig.add_subplot(221);
         ax1.hist(train_data[feature], bins=40, color=colors[0], edgecolor='#2f3542');
         ax1.set_title(f"Full Distribution: {feature.title()} (Standardized)")
         ax1.set_xlabel(f"{feature} (standardized)")
         ax1.set_ylabel('Frequency')
+
         ax2 = self.fig.add_subplot(222);
         ax2.hist(train_data[train_data.stroke == 0][feature], bins=40, density=True, color=colors[1], alpha=0.7);
         ax2.set_title("P(x | No Stroke)")
         ax2.set_xlabel(f"{feature} (standardized)")
         ax2.set_ylabel('Density')
+
         ax3 = self.fig.add_subplot(223);
         ax3.hist(train_data[train_data.stroke == 1][feature], bins=40, density=True, color=colors[2], alpha=0.7);
         ax3.set_title("P(x | Stroke)")
         ax3.set_xlabel(f"{feature} (standardized)")
         ax3.set_ylabel('Density')
+
         ax4 = self.fig.add_subplot(224);
         stats.probplot(train_data[feature], dist="norm", plot=ax4);
         ax4.set_title("Quantile-Quantile Plot (Standardized)")
         ax4.set_xlabel('Theoretical Quantiles')
         ax4.set_ylabel('Sample Quantiles')
+
         self.fig.tight_layout(pad=3.0);
         self.canvas.draw()
 
@@ -428,7 +433,7 @@ class NaiveBayesDashboard(QWidget):
         nb = GaussianNaiveBayes()
         nb.fit(X_train, y_train)
         y_pred = nb.predict(X_test)
-        p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
+        acc, p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
 
         sk = GaussianNB()
         sk.fit(X_train, y_train)
@@ -446,23 +451,23 @@ class NaiveBayesDashboard(QWidget):
                 </tr>
                 <tr>
                     <td>Accuracy</td>
-                    <td>{accuracy_score(y_test, y_pred):.4f}</td>
+                    <td>{acc:.4f}</td>
                     <td>{accuracy_score(y_test, y_pred_sk):.4f}</td>
                 </tr>
                 <tr>
                     <td>Precision</td>
-                    <td>{precision_score(y_test, y_pred, average='macro'):.4f}</td>
-                    <td>{precision_score(y_test, y_pred, average='macro'):.4f}</td>
+                    <td>{p:.4f}</td>
+                    <td>{precision_score(y_test, y_pred_sk, average='macro'):.4f}</td>
                 </tr>
                 <tr>
                     <td>Recall</td>
                     <td>{r:.4f}</td>
-                    <td>{recall_score(y_test, y_pred, average='macro'):.4f}</td>
+                    <td>{recall_score(y_test, y_pred_sk, average='macro'):.4f}</td>
                 </tr>
                 <tr>
                     <td>F1-score</td>
                     <td>{f1:.4f}</td>
-                    <td>{f1_score(y_test, y_pred, average='macro'):.4f}</td>
+                    <td>{f1_score(y_test, y_pred_sk, average='macro'):.4f}</td>
                 </tr>
             </table>
             """)

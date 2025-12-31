@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import accuracy_score
+from sklearn.naive_bayes import GaussianNB, BernoulliNB
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
 class GaussianNaiveBayes:
@@ -54,8 +54,10 @@ class GaussianNaiveBayes:
             recalls.append(recall)
             f1s.append(f1)
 
+        accuracy = np.mean(y_true == y_pred)
         # Macro-averaged metrics
         return (
+            accuracy,
             np.mean(precisions),
             np.mean(recalls),
             np.mean(f1s),
@@ -76,17 +78,35 @@ def run():
 
     sk = GaussianNB()
     sk.fit(X_train, y_train)
-    acc_sk = accuracy_score(y_test, sk.predict(X_test))
+    y_pred_sk = sk.predict(X_test)
+    acc_sk = accuracy_score(y_test, y_pred_sk)
 
-    p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
+    sk_bernoulli = BernoulliNB()
+    sk_bernoulli.fit(X_train, y_train)
+    y_pred_sk_bernoulli = sk_bernoulli.predict(X_test)
+    acc_sk_bernoulli = accuracy_score(y_test, y_pred_sk_bernoulli)
 
-    print(f"Accuracy (from scratch): {acc:.4f}")
-    print(f"Accuracy (sklearn):      {acc_sk:.4f}")
+    acc, p, r, f1 = nb.precision_recall_f1(y_test, y_pred)
 
-    print("From scratch metrics:")
-    print(f"Precision :   {p:.4f}")
-    print(f"Recall    :   {r:.4f}")
-    print(f"F1-score  :   {f1:.4f}")
+    print("Bernoulli sklearn metrics: \n")
+    print(f"Accuracy  :   {acc_sk_bernoulli:.15f}")
+    print(f"Precision :   {precision_score(y_test, y_pred_sk_bernoulli, average='macro'):.15f}")
+    print(f"Recall    :   {recall_score(y_test, y_pred_sk_bernoulli, average='macro'):.15f}")
+    print(f"F1-score  :   {f1_score(y_test, y_pred_sk_bernoulli, average='macro'):.15f}")
+    
+    print('------------------------------------')
+    print("sklearn metrics: \n")
+    print(f"Accuracy  :   {acc_sk:.15f}")
+    print(f"Precision :   {precision_score(y_test, y_pred_sk, average='macro'):.15f}")
+    print(f"Recall    :   {recall_score(y_test, y_pred_sk, average='macro'):.15f}")
+    print(f"F1-score  :   {f1_score(y_test, y_pred_sk, average='macro'):.15f}")
+
+    print('------------------------------------')
+    print("From scratch metrics: \n")
+    print(f"Accuracy  :   {acc:.15f}")
+    print(f"Precision :   {p:.15f}")
+    print(f"Recall    :   {r:.15f}")
+    print(f"F1-score  :   {f1:.15f}")
 
 
 if __name__ == "__main__":
