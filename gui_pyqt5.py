@@ -170,19 +170,49 @@ class NaiveBayesDashboard(QWidget):
 
     # ================= LOGIC FUNCTIONS =================
     def run_pipeline(self):
+        """
+        Execute the complete pipeline in the correct order per requirements:
+        1. Remove outliers
+        2. Calculate descriptive statistics
+        3. Standardize features (descriptive, using full data)
+        4. Split data (80% train, 20% test)
+        5. Training Data Feature Analysis (histograms, distribution types, normality tests, conditional distributions)
+        6. Standardize for model (using training statistics only)
+        7. Apply Naive Bayes classifier
+        """
         try:
-            removing_outliers.run();
-            quantitative_statistics.run();
+            # Step 1: Remove outliers
+            removing_outliers.run()
+            
+            # Step 2: Calculate descriptive statistics
+            quantitative_statistics.run()
+            
+            # Step 3: Standardize features (for descriptive analysis, using full data)
+            standardization.run()
+            
+            # Step 4: Split data into training (80%) and testing (20%)
             split_data.run()
-            standardization.run();
+            
+            # Step 5: Training Data Feature Analysis
+            # - Plot histograms/distributions
+            # - Comment on distribution types
+            # - Statistical test for normality
+            # - Plot conditional distributions P(x|y)
+            distribution_analysis.run()
+            
+            # Step 6: Standardize for model (using training statistics only)
             standardization_for_model.run()
-            distribution_analysis.run();
+            
+            # Step 7: Apply Naive Bayes classifier
             naive_bayes.run()
 
-            self.update_statistics();
+            # Update GUI displays
+            self.update_statistics()
             self.update_plots()
-            self.update_normality();
+            self.update_normality()
             self.update_model_results()
+            
+            QMessageBox.information(self, "Success", "More Conditional Plots are saved to the Dataset/plots")
         except Exception as e:
             QMessageBox.critical(self, "Critical Error", f"System Failure: {str(e)}")
 
@@ -208,94 +238,182 @@ class NaiveBayesDashboard(QWidget):
         self.stats_tab.setHtml(html)
 
     def update_plots(self):
+        """
+        Display distribution plots for the selected feature.
+        Uses standardized training data (what the model uses).
+        """
         feature = self.feature_box.currentText()
+        # Use standardized training data for visualization (what the model sees)
         train_data = pd.read_csv("Dataset/X_train_std.csv").join(pd.read_csv("Dataset/y_train.csv"))
         self.fig.clear()
         colors = ['#54a0ff', '#1dd1a1', '#ee5253', '#feca57']
         ax1 = self.fig.add_subplot(221);
         ax1.hist(train_data[feature], bins=40, color=colors[0], edgecolor='#2f3542');
-        ax1.set_title(f"Full Distribution: {feature.title()}")
+        ax1.set_title(f"Full Distribution: {feature.title()} (Standardized)")
+        ax1.set_xlabel(f"{feature} (standardized)")
+        ax1.set_ylabel('Frequency')
         ax2 = self.fig.add_subplot(222);
         ax2.hist(train_data[train_data.stroke == 0][feature], bins=40, density=True, color=colors[1], alpha=0.7);
         ax2.set_title("P(x | No Stroke)")
+        ax2.set_xlabel(f"{feature} (standardized)")
+        ax2.set_ylabel('Density')
         ax3 = self.fig.add_subplot(223);
         ax3.hist(train_data[train_data.stroke == 1][feature], bins=40, density=True, color=colors[2], alpha=0.7);
         ax3.set_title("P(x | Stroke)")
+        ax3.set_xlabel(f"{feature} (standardized)")
+        ax3.set_ylabel('Density')
         ax4 = self.fig.add_subplot(224);
         stats.probplot(train_data[feature], dist="norm", plot=ax4);
-        ax4.set_title("Quantile-Quantile Plot")
+        ax4.set_title("Quantile-Quantile Plot (Standardized)")
+        ax4.set_xlabel('Theoretical Quantiles')
+        ax4.set_ylabel('Sample Quantiles')
         self.fig.tight_layout(pad=3.0);
         self.canvas.draw()
 
     def update_normality(self):
-        feat = self.feature_box.currentText()
-        data = pd.read_csv("Dataset/X_train.csv")[feat].dropna()
-
-        # Calculations
-        stat, p = stats.shapiro(data.sample(min(3000, len(data))))
-        skewness = data.skew()
-        kurtosis = data.kurtosis()
-
-        is_normal = p > 0.05
-        status_text = "ACCEPT H₀: NORMAL" if is_normal else "REJECT H₀: NON-NORMAL"
-        status_color = "#27ae60" if is_normal else "#e74c3c"
-
-        html = f"""
-        <div style="font-family: 'Segoe UI'; padding: 25px; color: #ecf0f1;">
-            <h1 style="color: #ff9f43; border-bottom: 2px solid #2f3640; padding-bottom: 10px;">
-                Hypothesis Testing & Pipeline Logic: {feat.title()}
-            </h1>
-
-            <div style="margin-top: 15px; padding: 15px; background-color: #2f3640; border-radius: 8px;">
-                <p style="margin: 0; font-size: 13px; color: #95a5a6;">CURRENT PIPELINE STATUS</p>
-                <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: {status_color};">
-                    {status_text}
-                </p>
-            </div>
-
-            <div style="margin-top: 25px; background-color: #161b22; border-radius: 10px; padding: 20px; border: 1px solid #2f3640;">
-                <h3 style="color: #ff9f43; margin-top: 0;">1. Hypothesis Definitions</h3>
-                <p><b>Null Hypothesis (H₀):</b> The feature <i>{feat}</i> follows a Gaussian (Normal) distribution. 
-                In this state, we assume the data is symmetric and bell-shaped.</p>
-                <p><b>Alternative Hypothesis (H₁):</b> The feature <i>{feat}</i> does NOT follow a Gaussian distribution. 
-                This suggests the presence of significant skewness, heavy tails, or multi-modality.</p>
-            </div>
-
-            <div style="margin-top: 20px; background-color: #161b22; border-radius: 10px; padding: 20px; border: 1px solid #2f3640;">
-                <h3 style="color: #ff9f43; margin-top: 0;">2. The Lifecycle in Pipeline Execution</h3>
-
-                <table width="100%" style="font-size: 14px; border-collapse: collapse; margin-top: 10px;" cellpadding="8">
-                    <tr style="border-bottom: 1px solid #2f3640; color: #95a5a6;">
-                        <th align="left">Pipeline Phase</th>
-                        <th align="left">Action regarding H₀ / H₁</th>
-                    </tr>
-                    <tr>
-                        <td><b>Preprocessing</b></td>
-                        <td>Outlier removal is performed to help the data move closer to <b>H₀</b>.</td>
-                    </tr>
-                    <tr style="background-color: #1a2025;">
-                        <td><b>Distribution Analysis</b></td>
-                        <td>This module calculates the P-value. If P < 0.05, <b>H₀ is rejected</b>.</td>
-                    </tr>
-                    <tr>
-                        <td><b>Standardization</b></td>
-                        <td>Data is scaled. If <b>H₀ was rejected</b>, Z-score scaling is still applied, but the underlying non-normal shape remains.</td>
-                    </tr>
-                    <tr style="background-color: #1a2025;">
-                        <td><b>Naive Bayes Fit</b></td>
-                        <td>The model calculates Mean and Variance. It <i>forces</i> a Gaussian shape onto the data even if <b>H₁ is true</b>, which can lead to prediction errors.</td>
-                    </tr>
-                </table>
-            </div>
-
-            <div style="margin-top: 25px; border-left: 4px solid {status_color}; padding-left: 15px;">
-                <h3 style="color: {status_color};">Final Conclusion</h3>
-                <p style="line-height: 1.6;">
-                    Result: {f"The data remains consistent with <b>H₀</b>. Gaussian Naive Bayes is theoretically sound for this feature." if is_normal else f"The data best with <b>H₁</b>. Because the distribution is non-normal, the Naive Bayes model may yield biased probabilities for this specific feature."}
-                </p>
-            </div>
-        </div>
         """
+        Display distribution analysis results from distribution_analysis.py in the normality test tab.
+        Shows distribution type, skewness, kurtosis, and Shapiro-Wilk test results.
+        """
+        feat = self.feature_box.currentText()
+        
+        try:
+            # Try to load results from distribution analysis CSV
+            results_df = pd.read_csv("Dataset/distribution_analysis_results.csv")
+            row = results_df[results_df['Feature'] == feat].iloc[0]
+            
+            # Extract values
+            dist_type = row['Distribution_Type']
+            skewness = row['Skewness']
+            kurtosis = row['Kurtosis']
+            shapiro_stat = row['Shapiro_Statistic']
+            shapiro_p = row['Shapiro_p_value']
+            is_normal = row['Is_Normal']
+            no_stroke_count = int(row['No_Stroke_Count'])
+            stroke_count = int(row['Stroke_Count'])
+            
+            # Determine status color and verdict
+            alpha = 0.05
+            if is_normal:
+                status_color = "#27ae60"
+                verdict_text = "FAIL TO REJECT H₀"
+                verdict_detail = f"(p-value = {shapiro_p:.6e} > α = {alpha})"
+                conclusion = "The feature appears to follow a normal distribution."
+            else:
+                status_color = "#e74c3c"
+                verdict_text = "REJECT H₀"
+                verdict_detail = f"(p-value = {shapiro_p:.6e} ≤ α = {alpha})"
+                conclusion = "The feature does NOT follow a normal distribution."
+            
+            html = f"""
+            <div style="font-family: 'Segoe UI'; padding: 25px; color: #ecf0f1;">
+                <h1 style="color: #ff9f43; border-bottom: 2px solid #2f3640; padding-bottom: 10px;">
+                    DISTRIBUTION ANALYSIS: {feat.upper()}
+                </h1>
+
+                <!-- Distribution Type Section -->
+                <div style="margin-top: 25px; background-color: #2f3640; padding: 20px; border-radius: 10px; border-left: 5px solid #ff9f43;">
+                    <h2 style="color: #ff9f43; margin-top: 0;">1. DISTRIBUTION TYPE</h2>
+                    <p style="font-size: 18px; font-weight: bold; margin: 10px 0;">{dist_type}</p>
+                    <div style="margin-top: 15px; display: flex; gap: 20px;">
+                        <div>
+                            <span style="color: #95a5a6;">Skewness:</span>
+                            <span style="font-weight: bold; margin-left: 10px;">{skewness:.4f}</span>
+                        </div>
+                        <div>
+                            <span style="color: #95a5a6;">Kurtosis:</span>
+                            <span style="font-weight: bold; margin-left: 10px;">{kurtosis:.4f}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Normality Test Section -->
+                <div style="margin-top: 20px; background-color: #2f3640; padding: 20px; border-radius: 10px; border-left: 5px solid #54a0ff;">
+                    <h2 style="color: #54a0ff; margin-top: 0;">2. NORMALITY TEST: Shapiro-Wilk Test</h2>
+                    
+                    <div style="margin-top: 15px; background-color: #1e272e; padding: 15px; border-radius: 8px;">
+                        <h3 style="color: #ff9f43; margin-top: 0; font-size: 16px;">Hypotheses:</h3>
+                        <p style="margin: 8px 0; line-height: 1.8;">
+                            <b>H₀ (Null Hypothesis):</b> The feature '{feat}' follows a normal distribution<br>
+                            <b>H₁ (Alternative Hypothesis):</b> The feature '{feat}' does NOT follow a normal distribution
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 20px; display: flex; gap: 15px;">
+                        <div style="flex: 1; padding: 15px; background-color: #1e272e; border-radius: 10px; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #95a5a6;">TEST STATISTIC (W)</p>
+                            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold;">{shapiro_stat:.6f}</p>
+                        </div>
+                        <div style="flex: 1; padding: 15px; background-color: #1e272e; border-radius: 10px; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #95a5a6;">p-VALUE</p>
+                            <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold;">{shapiro_p:.6e}</p>
+                        </div>
+                        <div style="flex: 1; padding: 15px; background-color: #1e272e; border-radius: 10px; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #95a5a6;">SIGNIFICANCE LEVEL (α)</p>
+                            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold;">{alpha}</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 15px; background-color: #1e272e; border-radius: 10px; border: 2px solid {status_color};">
+                        <p style="margin: 0; font-size: 14px; color: #95a5a6; text-align: center;">VERDICT</p>
+                        <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: {status_color}; text-align: center;">
+                            {verdict_text}
+                        </p>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #95a5a6; text-align: center;">
+                            {verdict_detail}
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 15px; padding: 12px; background-color: #161b22; border-radius: 8px;">
+                        <p style="margin: 0; line-height: 1.6; font-size: 14px;">
+                            <b style="color: #ff9f43;">Conclusion:</b> {conclusion}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Conditional Distribution Info -->
+                <div style="margin-top: 20px; background-color: #2f3640; padding: 20px; border-radius: 10px; border-left: 5px solid #1dd1a1;">
+                    <h2 style="color: #1dd1a1; margin-top: 0;">3. CONDITIONAL DISTRIBUTIONS</h2>
+                    <div style="margin-top: 15px; display: flex; gap: 30px;">
+                        <div>
+                            <span style="color: #95a5a6;">P(x | No Stroke):</span>
+                            <span style="font-weight: bold; margin-left: 10px; color: #1dd1a1;">{no_stroke_count:,} samples</span>
+                        </div>
+                        <div>
+                            <span style="color: #95a5a6;">P(x | Stroke):</span>
+                            <span style="font-weight: bold; margin-left: 10px; color: #ee5253;">{stroke_count:,} samples</span>
+                        </div>
+                        <div>
+                        Conditional distributions show how the feature varies within each target class. 
+                        Visual plots are available in the Visualization tab and saved to <code>Dataset/plots/{feat}_distribution_analysis.png</code>
+                        </div>
+                    </div>
+                  
+                </div>
+
+             
+            </div>
+            """
+            
+        except (FileNotFoundError, IndexError, KeyError) as e:
+            # Fallback if CSV doesn't exist or feature not found
+            html = f"""
+            <div style="font-family: 'Segoe UI'; padding: 25px; color: #ecf0f1;">
+                <h1 style="color: #ff9f43; border-bottom: 2px solid #2f3640; padding-bottom: 10px;">
+                    NORMALITY ANALYSIS: {feat.upper()}
+                </h1>
+                <div style="margin-top: 25px; padding: 20px; background-color: #e74c3c; border-radius: 10px;">
+                    <p style="margin: 0; font-size: 16px;">
+                        <b>Distribution analysis not yet completed.</b><br>
+                        Please run the pipeline first to generate distribution analysis results.
+                    </p>
+                    <p style="margin-top: 15px; font-size: 14px; color: #f5f6fa;">
+                        Click "EXECUTE PIPELINE" to perform the full analysis.
+                    </p>
+                </div>
+            </div>
+            """
+        
         self.normality_tab.setHtml(html)
     def update_model_results(self):
         X_train = pd.read_csv("Dataset/X_train_std.csv").values
@@ -377,6 +495,14 @@ QComboBox QAbstractItemView {
 QPushButton { background-color: #2f3640; border-radius: 5px; padding: 12px; font-weight: bold; font-size: 14px; color: white; border: 1px solid #2f3640; }
 QPushButton:hover { background-color: #ff9f43; color: #1e272e; }
 QTextEdit { background-color: #1e272e; border: none; }
+QMessageBox { background-color: #1e272e; border: 1px solid #2f3640; border-radius: 10px; padding: 20px; }
+QMessageBox::icon { color: #ff9f43; }
+QMessageBox::title { color: #ff9f43; }
+QMessageBox::text { color: #f5f6fa; }
+QMessageBox::button { background-color: #2f3640; border: 1px solid #2f3640; border-radius: 5px; padding: 10px; font-weight: bold; font-size: 14px; color: white; }
+QMessageBox::button:hover { background-color: #ff9f43; color: #1e272e; }
+QMessageBox::button:pressed { background-color: #e74c3c; color: #1e272e; }
+QMessageBox::button:disabled { background-color: #2f3640; color: #95a5a6; }
 """
 
 if __name__ == "__main__":
